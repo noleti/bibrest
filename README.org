@@ -1,0 +1,40 @@
+* bibrest
+- Simple RESTful API to expose bibtex library
+- Based on Python, using =flask= and =pybtex=
+- Intended to be used as backend for websites rendering bibtex reference lists 
+
+- Nils Ole Tippenhauer, SUTD, 2016
+
+** Installation
+Install flask and pubtex
+
+#+begin_src bash
+sudo pip install flask pybtex
+#+end_src
+
+Then, the development flask server can be started with
+
+#+begin_src bash
+python bibrest.py
+#+end_src
+
+It will serve the test.bib in the same folder. 
+
+** Resources
+*** =/bibs=
+Will return all bibtex entries, including the project field
+
+*** =/bib/<key>=
+Will return bibtex for article =<key>=
+
+*** =/projects=
+Will return human readable list of all project keys in the database
+
+*** =/projects/<projectkey>=
+Will return bibtex of all entries with that =<projectkey>=
+
+** Deployment
+For more stable deployments, we recommend gunicorn, apache, or nginx.
+
+** Todo/known bugs
+- Only one project per entry
