@@ -3,10 +3,8 @@
 - Based on Python, using =flask= and =pybtex=
 - Intended to be used as backend for websites rendering bibtex reference lists 
 
-- Nils Ole Tippenhauer, SUTD, 2016
-
 ** Installation
-Install flask and pubtex
+Install flask and pybtex
 
 #+begin_src bash
 sudo pip install flask pybtex
@@ -38,3 +36,8 @@ For more stable deployments, we recommend gunicorn, apache, or nginx.
 
 ** Todo/known bugs
 - Only one project per entry
+- Finish author filtering
+- Add ?year=2016 filter
+- Add sort options with ?sort=chrono or antichrono
+** Author
+Nils Ole Tippenhauer, SUTD, 2016
