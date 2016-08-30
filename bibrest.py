@@ -27,7 +27,7 @@ def entryToBibtex(entry):
 
 @app.route('/')
 def api_root():
-    return 'Welcome'
+    return 'Welcome to BibRest. This server is intended as API for machines.'
 
 # return all entries in our bibliography in bibtex string
 @app.route('/bibs', methods = ['GET', 'POST'])
@@ -49,10 +49,13 @@ def api_articles():
         return "HTTP method not supported", 405
 
 # return specific entry in bibtex string
-@app.route('/bib/<articleid>')
-def api_article(articleid):
+@app.route('/bib/<articleids>')
+def api_article(articleids):
     bib_data = parse_file(bibfile)
-    return entryToBibtex(bib_data.entries[articleid]), 200, {'Content-Type': mime}
+    rval=""
+    for articleid in articleids.split(','):
+        rval+=entryToBibtex(bib_data.entries[articleid])
+    return rval, 200, {'Content-Type': mime}
 
 # return all project keys as JSON
 @app.route('/projects')
@@ -69,17 +72,18 @@ def api_projects():
     rval="Available projects in database:\n"
     for p in projects.keys():
         rval+="- %s (%d)\n"%(p,projects[p])
-    return rval, 200, {'Content-Type': 'text'}
-    
+    return rval, 200, {'Content-Type': 'text'}    
 
 # return all entries belonging to certain project
-@app.route('/project/<projectid>')
-def api_project(projectid):
+# There might be a problem if one projects's name is a substring of another project name
+@app.route('/project/<projectids>')
+def api_project(projectids):
     bib_data = parse_file(bibfile)
     rval=""
-    for entry in bib_data.entries.values():
-        if entry.fields['project'] and entry.fields['project'].upper()==projectid.upper():
-           rval+=entryToBibtex(entry)
+    for projectid in projectids.split(','):
+        for entry in bib_data.entries.values():
+            if entry.fields['project'] and entry.fields['project'].upper()==projectid.upper():
+                rval+=entryToBibtex(entry)
     return rval, 200, {'Content-Type': mime}
 
 # return all authors as JSON
@@ -101,13 +105,15 @@ def api_authors():
     
 
 # return all entries belonging to certain author
-@app.route('/author/<authorid>')
-def api_author(authorid):
+# There might be a problem if one author's name is a substring of another author's name
+@app.route('/author/<authorids>')
+def api_author(authorids):
     bib_data = parse_file(bibfile)
     rval=""
-    for entry in bib_data.entries.values():
-        if entry.fields['author'] and authorid.upper() in entry.fields['project'].upper():
-           rval+=entryToBibtex(entry)
+    for authorid in authorids.split(','):
+        for entry in bib_data.entries.values():
+            if entry.fields['author'] and authorid.upper() in entry.fields['author'].upper():
+                rval+=entryToBibtex(entry)
     return rval, 200, {'Content-Type': mime}
 
 
