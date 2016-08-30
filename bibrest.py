@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Simple RESTful API to represent bibtex database
-# Adds 'Project' field to bibtex source
+# Requires 'project' field in bibtex source
 # Entries can then be filtered based on project
 # Nils, SUTD, 2016
 
@@ -24,7 +24,6 @@ def entryToBibtex(entry):
         fields=fields[:-2]
     return "@%s{%s,\n%s}\n"%(entry.type,entry.key,fields)
     
-
 @app.route('/')
 def api_root():
     return 'Welcome to BibRest. This server is intended as API for machines.'
@@ -32,9 +31,19 @@ def api_root():
 # return all entries in our bibliography in bibtex string
 @app.route('/bibs', methods = ['GET', 'POST'])
 def api_articles():
-    bib_data = parse_file(bibfile)    
-    if request.method == 'GET':    
-        return bib_data.to_string('bibtex'), 200, {'Content-Type': mime}
+    reverse=False
+    bib_data = parse_file(bibfile)
+    if request.args.get('reverse'):
+        reverse=True        
+    if request.method == 'GET':
+        if request.args.get('author') and request.args.get('project'):
+            return api_author_project(request.args.get('author'),request.args.get('project'),reverse)
+        elif request.args.get('project'):
+            return api_project(request.args.get('project'),reverse)
+        elif request.args.get('author'):
+            return api_author(request.args.get('author'),reverse)
+        else:        
+            return bib_data.to_string('bibtex'), 200, {'Content-Type': mime}
     elif request.method == 'POST':
         try:
             data=parse_string(request.data,'bibtex')
@@ -76,14 +85,24 @@ def api_projects():
 
 # return all entries belonging to certain project
 # There might be a problem if one projects's name is a substring of another project name
-@app.route('/project/<projectids>')
+# The current route is somewhat unrestful
+#@app.route('/project/<projectids>')
 def api_project(projectids):
     bib_data = parse_file(bibfile)
     rval=""
+    rbibs=[]
     for projectid in projectids.split(','):
         for entry in bib_data.entries.values():
             if entry.fields['project'] and entry.fields['project'].upper()==projectid.upper():
-                rval+=entryToBibtex(entry)
+                if not entry in rbibs:
+                    rbibs.append(entry)
+                continue
+    # sort if required
+    # This assumes all entries have a year field
+    rbibs.sort(key=lambda x: x.fields['year'], reverse=reverse)
+    # now output as bibtex
+    for entry in rbibs:
+        rval+=entryToBibtex(entry)        
     return rval, 200, {'Content-Type': mime}
 
 # return all authors as JSON
@@ -101,19 +120,49 @@ def api_authors():
     rval="Available projects in database:\n"
     for p in projects.keys():
         rval+="- %s (%d)\n"%(p,projects[p])
-    return rval, 200, {'Content-Type': 'text'}
-    
+    return rval, 200, {'Content-Type': 'text'}    
 
 # return all entries belonging to certain author
 # There might be a problem if one author's name is a substring of another author's name
-@app.route('/author/<authorids>')
-def api_author(authorids):
+# The current route is somewhat unrestful
+#@app.route('/author/<authorids>')
+def api_author(authorids,reverse):
     bib_data = parse_file(bibfile)
     rval=""
+    rbibs=[]
     for authorid in authorids.split(','):
         for entry in bib_data.entries.values():
             if entry.fields['author'] and authorid.upper() in entry.fields['author'].upper():
-                rval+=entryToBibtex(entry)
+                if not entry in rbibs:
+                    rbibs.append(entry)
+                continue
+    # sort if required
+    # This assumes all entries have a year field
+    rbibs.sort(key=lambda x: x.fields['year'], reverse=reverse)
+    # now output as bibtex
+    for entry in rbibs:
+        rval+=entryToBibtex(entry)        
+    return rval, 200, {'Content-Type': mime}
+
+# Somewhat of a dirty hack: author and project was specified
+def api_author_project(authorids,projectids,reverse):
+    bib_data = parse_file(bibfile)
+    rval=""
+    rbibs=[]
+    for authorid in authorids.split(','):
+        for projectid in projectids.split(','):        
+            for entry in bib_data.entries.values():
+                if entry.fields['author'] and (authorid.upper() in entry.fields['author'].upper()) and entry.fields['project'] and entry.fields['project'].upper()==projectid.upper():
+                    title=entry.fields['title']
+                    if not title in rbibs:
+                        rbibs=entry
+                    continue
+    # sort if required
+    # This assumes all entries have a year field
+    rbibs.sort(key=lambda x: x.fields['year'], reverse=reverse)
+    # now output as bibtex
+    for entry in rbibs:
+        rval+=entryToBibtex(entry)        
     return rval, 200, {'Content-Type': mime}
 
 
