@@ -22,15 +22,20 @@ It will serve the test.bib in the same folder.
 *** =/bibs=
 Will return all bibtex entries, including the project field
 
+Arguments:
+- =reverse=: set to =True= if order should be anti-chronologic
+- =author=: give one or more author names (comma separated). Will return bibtex of all entries with those strings in author field.
+- =project=: give one or more project names (comma separated). Will return bibtex of all entries with those projects.
+Example use:
+=foo.bar/bibs?author=tippenhauer,mathur&project=aspire&reverse=True=
 *** =/bib/<key>=
 Will return bibtex for article =<key>=
 
 *** =/projects=
 Will return human readable list of all project keys in the database
 
-*** =/projects/<projectkey>=
-Will return bibtex of all entries with that =<projectkey>=
-
+*** =/authors=
+Will return human readable list of all authors in the database
 ** Deployment
 For more stable deployments, we recommend gunicorn, apache, or nginx.
 
