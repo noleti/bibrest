@@ -19,8 +19,8 @@ python bibrest.py
 It will serve the test.bib in the same folder. 
 
 ** Resources
-*** =/bibs=
-Will return all bibtex entries, including the project field
+*** =/bibs?author=<authorlist>&project=<projectlist>&reverse=True=
+Will return all bibtex entries, including the project field. All arguments are optional
 
 Arguments:
 - =reverse=: set to =True= if order should be anti-chronologic
@@ -41,8 +41,6 @@ For more stable deployments, we recommend gunicorn, apache, or nginx.
 
 ** Todo/known bugs
 - Only one project per entry
-- Finish author filtering
 - Add ?year=2016 filter
-- Add sort options with ?sort=chrono or antichrono
 ** Author
 Nils Ole Tippenhauer, SUTD, 2016
