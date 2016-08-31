@@ -19,15 +19,16 @@ python bibrest.py
 It will serve the test.bib in the same folder. 
 
 ** Resources
-*** =/bibs?author=<authorlist>&project=<projectlist>&reverse=True=
+*** =/bibs?author=<authorlist>&project=<projectlist>&reverse=True&start=123=
 Will return all bibtex entries, including the project field. All arguments are optional
 
 Arguments:
 - =reverse=: set to =True= if order should be anti-chronologic
 - =author=: give one or more author names (comma separated). Will return bibtex of all entries with those strings in author field.
 - =project=: give one or more project names (comma separated). Will return bibtex of all entries with those projects.
+- =start=: give starting year from which on results are returned
 Example use:
-=foo.bar/bibs?author=tippenhauer,mathur&project=aspire&reverse=True=
+=foo.bar/bibs?author=tippenhauer,mathur&project=aspire&reverse=True&start=2014=
 *** =/bib/<key>=
 Will return bibtex for article =<key>=
 
