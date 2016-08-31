@@ -8,22 +8,27 @@ from flask import Flask, url_for, jsonify, request
 import json
 from pybtex.database import parse_file, parse_string
 
-# technically correct, but hard to debug 
-#mime='application/x-bibtex'
-mime='text'
+mime='application/x-bibtex'
 
 app = Flask(__name__)
-bibfile="bibrest.bib"
+bibfile="/home/ubuntu/bibrest/bibrest.bib"
 
+# Why does this have to be so complicated?
 def entryToBibtex(entry):
-    fields=""
+    fields="author={"
+    persons=[]
+    for p in entry.persons['author']:
+        name=str(p)[9:-2].replace("\\\\","\\")# this is so dirty
+        persons.append(name) 
+    fields+=" and ".join(persons)
+    fields+="},\n"
     for f in entry.fields.keys():
         if f.lower()!='project':
             fields+="%s={%s},\n"%(f,entry.fields[f])
     if len(fields)>5:
         fields=fields[:-2]
     return "@%s{%s,\n%s}\n"%(entry.type,entry.key,fields)
-    
+
 @app.route('/')
 def api_root():
     return 'Welcome to BibRest. This server is intended as API for machines.'
@@ -36,6 +41,7 @@ def api_articles():
     if request.args.get('reverse'):
         reverse=True        
     if request.method == 'GET':
+        print("detected GET")
         if request.args.get('author') and request.args.get('project'):
             return api_author_project(request.args.get('author'),request.args.get('project'),reverse)
         elif request.args.get('project'):
@@ -43,7 +49,7 @@ def api_articles():
         elif request.args.get('author'):
             return api_author(request.args.get('author'),reverse)
         else:        
-            return bib_data.to_string('bibtex'), 200, {'Content-Type': mime}
+            return bib_data.to_string('bibtex'), 200, {'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.bib'}
     elif request.method == 'POST':
         try:
             data=parse_string(request.data,'bibtex')
@@ -64,7 +70,7 @@ def api_article(articleids):
     rval=""
     for articleid in articleids.split(','):
         rval+=entryToBibtex(bib_data.entries[articleid])
-    return rval, 200, {'Content-Type': mime}
+    return rval, 200, {'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.bib'}
 
 # return all project keys as JSON
 @app.route('/projects')
@@ -87,7 +93,7 @@ def api_projects():
 # There might be a problem if one projects's name is a substring of another project name
 # The current route is somewhat unrestful
 #@app.route('/project/<projectids>')
-def api_project(projectids):
+def api_project(projectids,reverse):
     bib_data = parse_file(bibfile)
     rval=""
     rbibs=[]
@@ -103,23 +109,23 @@ def api_project(projectids):
     # now output as bibtex
     for entry in rbibs:
         rval+=entryToBibtex(entry)        
-    return rval, 200, {'Content-Type': mime}
+    return rval, 200, {'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.bib'}
 
 # return all authors as JSON
 @app.route('/authors')
 def api_authors():
     bib_data = parse_file(bibfile)
-    projects={}
+    authors={}
     for entry in bib_data.entries.values():
-        if 'project' in entry.fields:
-            p=entry.fields['project'].upper()
-            if p in projects.keys():
-                projects[p]+=1
+        if 'author' in entry.fields:
+            p=entry.fields['author']
+            if p in authorss.keys():
+                authors[p]+=1
             else:
-                projects[p]=1
-    rval="Available projects in database:\n"
-    for p in projects.keys():
-        rval+="- %s (%d)\n"%(p,projects[p])
+                authors[p]=1
+    rval="Available authors in database:\n"
+    for p in authors.keys():
+        rval+="- %s (%d)\n"%(p,authors[p])
     return rval, 200, {'Content-Type': 'text'}    
 
 # return all entries belonging to certain author
@@ -142,7 +148,7 @@ def api_author(authorids,reverse):
     # now output as bibtex
     for entry in rbibs:
         rval+=entryToBibtex(entry)        
-    return rval, 200, {'Content-Type': mime}
+    return rval, 200, {'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.bib'}
 
 # Somewhat of a dirty hack: author and project was specified
 def api_author_project(authorids,projectids,reverse):
@@ -163,8 +169,8 @@ def api_author_project(authorids,projectids,reverse):
     # now output as bibtex
     for entry in rbibs:
         rval+=entryToBibtex(entry)        
-    return rval, 200, {'Content-Type': mime}
+    return rval, 200, {'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.bib'}
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",port=8080,debug=True)
