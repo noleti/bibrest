@@ -13,7 +13,38 @@ headers={'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.
 
 
 app = Flask(__name__)
-bibfile="/home/ubuntu/bibrest/bibrest.bib"
+bibfile="bibrest.bib"
+
+# using http://stackoverflow.com/questions/28083369/sorting-numericly-and-by-month-name
+def sort_day_week_key(day_week_str):
+    return int(day_week_str.split()[-1])
+
+fixMonths={'jan': 'January',
+               'feb': 'February',
+               'mar': 'March',
+               'apr': 'April',
+               'jun': 'June',
+               'jul': 'July',
+               'aug': 'August',
+               'sep': 'September',
+               'oct': 'October',
+               'nov': 'November',
+               'dec': 'December'}
+
+import calendar
+_MONTH_MAP = {m.lower(): i for i, m in enumerate(calendar.month_name[1:])}
+def sort_month_names_key(m_name):
+    return _MONTH_MAP[m_name.lower()]
+
+def sort_the_stuff_key(item):
+    try:
+        return sort_month_names_key(item)
+    except KeyError:
+        return sort_day_week_key
+
+def sort_the_stuff(some_iterable):
+    return sorted(some_iterable, key=sort_the_stuff_key)
+
 
 # Why does this have to be so complicated?
 def entryToBibtex(entry):
@@ -126,7 +157,15 @@ def api_author_project(authorids,projectids,reverse,start):
                     continue
     # sort if required
     # This assumes all entries have a year field
-    rbibs.sort(key=lambda x: x.fields['year'], reverse=reverse)
+    #rbibs.sort(key=lambda x: x.fields['year'], reverse=reverse)
+    for x in rbibs:
+        if not 'month' in x.fields.keys():
+            x.fields['month']="December"
+        # handle incorrect month={Nov} entries
+        elif x.fields['month'].lower() in fixMonths.keys():
+            x.fields['month']=fixMonths[x.fields['month'].lower()]            
+        print x.fields['month']
+    rbibs.sort(key=lambda x: (x.fields['year'],_MONTH_MAP[x.fields['month'].lower()]), reverse=reverse)
     # now output as bibtex
     for entry in rbibs:
         rval+=entryToBibtex(entry)        
