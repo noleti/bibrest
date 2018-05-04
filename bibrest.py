@@ -13,7 +13,7 @@ headers={'Content-Type': mime, 'Content-Disposition': 'attachment; filename=bib.
 
 
 app = Flask(__name__)
-bibfile="bibrest.bib"
+bibfile="/home/ubuntu/bibrest/bibrest.bib"
 
 # using http://stackoverflow.com/questions/28083369/sorting-numericly-and-by-month-name
 def sort_day_week_key(day_week_str):
@@ -35,16 +35,6 @@ import calendar
 _MONTH_MAP = {m.lower(): i for i, m in enumerate(calendar.month_name[1:])}
 def sort_month_names_key(m_name):
     return _MONTH_MAP[m_name.lower()]
-
-def sort_the_stuff_key(item):
-    try:
-        return sort_month_names_key(item)
-    except KeyError:
-        return sort_day_week_key
-
-def sort_the_stuff(some_iterable):
-    return sorted(some_iterable, key=sort_the_stuff_key)
-
 
 # Why does this have to be so complicated?
 def entryToBibtex(entry):
@@ -130,12 +120,14 @@ def api_authors():
     bib_data = parse_file(bibfile)
     authors={}
     for entry in bib_data.entries.values():
-        if 'author' in entry.fields:
-            p=entry.fields['author']
-            if p in authorss.keys():
-                authors[p]+=1
-            else:
-                authors[p]=1
+        # for some reason: 'author' in entry.fields == False
+        if entry.fields['author']:
+            authorss = entry.fields['author'].split(' and ')
+            for p in authorss:
+                if p in authors.keys():
+                    authors[p]+=1
+                else:
+                    authors[p]=1
     rval="Available authors in database:\n"
     for p in authors.keys():
         rval+="- %s (%d)\n"%(p,authors[p])
@@ -164,7 +156,6 @@ def api_author_project(authorids,projectids,reverse,start):
         # handle incorrect month={Nov} entries
         elif x.fields['month'].lower() in fixMonths.keys():
             x.fields['month']=fixMonths[x.fields['month'].lower()]            
-        print x.fields['month']
     rbibs.sort(key=lambda x: (x.fields['year'],_MONTH_MAP[x.fields['month'].lower()]), reverse=reverse)
     # now output as bibtex
     for entry in rbibs:
